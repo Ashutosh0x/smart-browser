@@ -10,6 +10,7 @@
 ![Google Gemini](https://img.shields.io/badge/Google%20Gemini-8E75B2?style=for-the-badge&logo=googlegemini&logoColor=white)
 
 **An AI-native browser operating system with multi-agent browsing and Gemini-powered video intelligence.**
+<img width="2816" height="1536" alt="Gemini_Generated_Image_gsixjygsixjygsix" src="https://github.com/user-attachments/assets/ce1592ce-28d6-48d8-b9d8-bd7d00dd6e3b" />
 
 </div>
 
@@ -18,6 +19,7 @@
 ## Overview
 
 Smart Browser is an Electron-based browser that reimagines web browsing as an operating system. It features a multi-agent workspace where up to 4 browser agents can run simultaneously, each in its own isolated BrowserView. The browser integrates AI capabilities including natural language commands and Gemini-powered video explanations.
+
 
 ---
 
@@ -229,3 +231,4 @@ MIT License
 
 Ashutosh Kumar Singh  
 ashutoshkumarsingh0x@gmail.com
+
