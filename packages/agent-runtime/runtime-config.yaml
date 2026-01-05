@@ -1,0 +1,83 @@
+# Agent Runtime Configuration
+# This file defines the configuration schema for the AB-OS Agent Runtime
+
+runtime:
+  # Maximum concurrent agents
+  maxConcurrentAgents: 50
+  
+  # Default timeout for agent execution (seconds)
+  defaultTimeout: 300
+  
+  # Tick interval for scheduler (milliseconds)
+  tickInterval: 100
+
+warmPool:
+  # Minimum contexts to keep warm
+  minSize: 5
+  
+  # Maximum contexts in pool
+  maxSize: 20
+  
+  # Time to keep idle contexts (seconds)
+  idleTimeout: 300
+  
+  # Pre-warm on startup
+  preWarm: true
+
+memory:
+  # Maximum memory per agent (MB)
+  maxPerAgent: 512
+  
+  # Snapshot retention count
+  snapshotRetention: 100
+  
+  # Episodic memory limit
+  episodicLimit: 50
+
+llm:
+  # Local LLM for micro-planning
+  provider: ollama
+  model: mistral:latest
+  endpoint: http://localhost:11434
+  
+  # Generation settings
+  temperature: 0.2
+  maxTokens: 1024
+  
+  # Fallback model
+  fallback:
+    provider: ollama
+    model: llama3:8b
+
+kernel:
+  # Kernel gRPC endpoint
+  endpoint: localhost:50051
+  
+  # Connection timeout (seconds)
+  connectTimeout: 10
+  
+  # Request timeout (seconds)
+  requestTimeout: 30
+
+observability:
+  # Enable detailed logging
+  verboseLogging: false
+  
+  # Metrics endpoint
+  metricsPort: 9090
+  
+  # Trace sampling rate
+  traceSampleRate: 0.1
+
+retry:
+  # Maximum retries per step
+  maxRetries: 3
+  
+  # Backoff multiplier
+  backoffMultiplier: 2.0
+  
+  # Initial backoff (milliseconds)
+  initialBackoff: 1000
+  
+  # Maximum backoff (milliseconds)
+  maxBackoff: 30000

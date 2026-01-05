@@ -1,0 +1,242 @@
+syntax = "proto3";
+
+package abos.kernel;
+
+option go_package = "github.com/abos/kernel/abi";
+
+// ============================================================================
+// Common Types
+// ============================================================================
+
+message CapabilityToken {
+  string token = 1;  // JWT string
+}
+
+message Selector {
+  string css = 1;
+  string xpath = 2;
+  string text = 3;
+}
+
+message Point {
+  int32 x = 1;
+  int32 y = 2;
+}
+
+message Rect {
+  int32 x = 1;
+  int32 y = 2;
+  int32 width = 3;
+  int32 height = 4;
+}
+
+// ============================================================================
+// Syscall Requests
+// ============================================================================
+
+message SnapshotRequest {
+  CapabilityToken capability = 1;
+  string agent_id = 2;
+  bool include_styles = 3;
+  bool include_layout = 4;
+  repeated string exclude_selectors = 5;
+}
+
+message SnapshotResponse {
+  bool success = 1;
+  string error = 2;
+  bytes dom_data = 3;
+  string content_hash = 4;
+  int64 capture_timestamp = 5;
+}
+
+message ClickRequest {
+  CapabilityToken capability = 1;
+  string agent_id = 2;
+  Selector target = 3;
+  string button = 4;  // left, right, middle
+  int32 click_count = 5;  // 1=single, 2=double
+}
+
+message ClickResponse {
+  bool success = 1;
+  string error = 2;
+  Rect element_bounds = 3;
+  string content_hash_before = 4;
+  string content_hash_after = 5;
+}
+
+message TypeRequest {
+  CapabilityToken capability = 1;
+  string agent_id = 2;
+  Selector target = 3;
+  string text = 4;
+  bool clear_first = 5;
+  int32 delay_ms = 6;  // Delay between keystrokes
+}
+
+message TypeResponse {
+  bool success = 1;
+  string error = 2;
+  string value_before = 3;
+  string value_after = 4;
+}
+
+message NavigateRequest {
+  CapabilityToken capability = 1;
+  string agent_id = 2;
+  string url = 3;
+  int32 timeout_ms = 4;
+  string wait_until = 5;  // load, domcontentloaded, networkidle
+}
+
+message NavigateResponse {
+  bool success = 1;
+  string error = 2;
+  string final_url = 3;
+  int32 status_code = 4;
+  int64 load_time_ms = 5;
+}
+
+message ScreenshotRequest {
+  CapabilityToken capability = 1;
+  string agent_id = 2;
+  Rect clip = 3;  // Optional clip region
+  bool full_page = 4;
+  string format = 5;  // png, jpeg, webp
+  int32 quality = 6;  // 0-100 for jpeg/webp
+}
+
+message ScreenshotResponse {
+  bool success = 1;
+  string error = 2;
+  bytes image_data = 3;
+  string content_type = 4;
+  Rect viewport = 5;
+}
+
+message ScrollRequest {
+  CapabilityToken capability = 1;
+  string agent_id = 2;
+  int32 x = 3;
+  int32 y = 4;
+  Selector element = 5;  // Optional: scroll within element
+  string behavior = 6;  // smooth, instant
+}
+
+message ScrollResponse {
+  bool success = 1;
+  string error = 2;
+  Point scroll_position = 3;
+}
+
+message HoverRequest {
+  CapabilityToken capability = 1;
+  string agent_id = 2;
+  Selector target = 3;
+}
+
+message HoverResponse {
+  bool success = 1;
+  string error = 2;
+  Rect element_bounds = 3;
+}
+
+message WaitRequest {
+  CapabilityToken capability = 1;
+  string agent_id = 2;
+  oneof condition {
+    Selector selector_visible = 3;
+    Selector selector_hidden = 4;
+    string url_matches = 5;
+    int32 timeout_ms = 6;
+    string function = 7;  // JavaScript function to evaluate
+  }
+  int32 max_wait_ms = 8;
+}
+
+message WaitResponse {
+  bool success = 1;
+  string error = 2;
+  int64 waited_ms = 3;
+}
+
+message ExtractRequest {
+  CapabilityToken capability = 1;
+  string agent_id = 2;
+  Selector target = 3;
+  string attribute = 4;  // innerHTML, textContent, href, etc.
+  bool multiple = 5;  // Extract from all matching elements
+}
+
+message ExtractResponse {
+  bool success = 1;
+  string error = 2;
+  repeated string values = 3;
+}
+
+// ============================================================================
+// Syscall Service
+// ============================================================================
+
+service KernelSyscall {
+  // DOM Operations
+  rpc Snapshot(SnapshotRequest) returns (SnapshotResponse);
+  rpc Click(ClickRequest) returns (ClickResponse);
+  rpc Type(TypeRequest) returns (TypeResponse);
+  rpc Hover(HoverRequest) returns (HoverResponse);
+  rpc Scroll(ScrollRequest) returns (ScrollResponse);
+  rpc Extract(ExtractRequest) returns (ExtractResponse);
+  
+  // Navigation
+  rpc Navigate(NavigateRequest) returns (NavigateResponse);
+  rpc Wait(WaitRequest) returns (WaitResponse);
+  
+  // Capture
+  rpc Screenshot(ScreenshotRequest) returns (ScreenshotResponse);
+
+  // Adblock (Network Interception)
+  rpc InterceptNetwork(NetworkInterceptRequest) returns (NetworkInterceptResponse);
+}
+
+// ============================================================================
+// Adblock / Network Interception
+// ============================================================================
+
+message NetworkInterceptRequest {
+  CapabilityToken capability = 1;
+  string agent_id = 2;
+  string url = 3;
+  string method = 4;
+  string resource_type = 5;
+  map<string, string> headers = 6;
+  string page_url = 7;
+}
+
+message NetworkInterceptResponse {
+  bool blocked = 1;
+  string rule_id = 2;
+  map<string, string> modified_headers = 3;
+  string reason = 4;
+}
+
+message AdblockDecision {
+  string request_id = 1;
+  string agent_id = 2;
+  string rule_id = 3;
+  string action = 4;  // block, allow, modify
+  string host = 5;
+  string resource_type = 6;
+  int64 timestamp = 7;
+}
+
+message AdblockConfig {
+  string mode = 1;  // strict, balanced, allowlist, off
+  repeated string allowlist = 2;
+  repeated string denylist = 3;
+  bool dom_sanitizer = 4;
+  bool cosmetic_filtering = 5;
+  bool block_websockets = 6;
+  bool strip_tracking_headers = 7;
+}
+

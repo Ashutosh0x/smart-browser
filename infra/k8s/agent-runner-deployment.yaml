@@ -1,0 +1,146 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: abos-agent-runtime
+  namespace: abos
+  labels:
+    app: abos-agent-runtime
+    component: agent-runtime
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: abos-agent-runtime
+  template:
+    metadata:
+      labels:
+        app: abos-agent-runtime
+        component: agent-runtime
+    spec:
+      serviceAccountName: abos-agent-runtime
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: agent-runtime
+          image: abos/agent-runtime:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8003
+              protocol: TCP
+            - name: metrics
+              containerPort: 9090
+              protocol: TCP
+          env:
+            - name: ABOS_LOG_LEVEL
+              value: "info"
+            - name: ABOS_HTTP_PORT
+              value: "8003"
+            - name: ABOS_KERNEL_ENDPOINT
+              value: "abos-kernel:50051"
+            - name: ABOS_POLICY_ENDPOINT
+              value: "abos-policy-authority:8002"
+            - name: MAX_CONCURRENT_AGENTS
+              value: "50"
+            - name: WARM_POOL_SIZE
+              value: "10"
+            - name: LLM_PROVIDER
+              value: "ollama"
+            - name: LLM_MODEL
+              value: "mistral:latest"
+            - name: LLM_ENDPOINT
+              value: "http://ollama:11434"
+          resources:
+            requests:
+              cpu: "4"
+              memory: "16Gi"
+            limits:
+              cpu: "8"
+              memory: "32Gi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: agent-data
+              mountPath: /data
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: agent-data
+          emptyDir:
+            sizeLimit: 10Gi
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: abos-agent-runtime
+  namespace: abos
+  labels:
+    app: abos-agent-runtime
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8003
+      targetPort: http
+    - name: metrics
+      port: 9090
+      targetPort: metrics
+  selector:
+    app: abos-agent-runtime
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: abos-agent-runtime
+  namespace: abos
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: abos-agent-runtime
+  namespace: abos
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: abos-agent-runtime
+  minReplicas: 3
+  maxReplicas: 20
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80

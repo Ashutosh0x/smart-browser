@@ -1,0 +1,102 @@
+# Mail Read-Only Policy
+# Allows reading email but blocks sending, deleting, or modifying
+
+policy:
+  name: mail-read-only
+  version: "1.0.0"
+  description: "Allow reading email but not sending, deleting, or modifying"
+
+rules:
+  # Allow reading emails
+  - name: allow-read-mail
+    when:
+      all:
+        - domain: { matches: "*.mail.google.com" }
+        - capability: CAP_READ
+    then:
+      allow: true
+      audit:
+        level: standard
+
+  # Allow navigating within mail
+  - name: allow-navigate-mail
+    when:
+      all:
+        - domain: { matches: "*.mail.google.com" }
+        - capability: CAP_NAVIGATE
+    then:
+      allow: true
+      constrain:
+        domains: ["mail.google.com", "*.mail.google.com"]
+
+  # Allow basic interactions (clicking, scrolling)
+  - name: allow-basic-interact
+    when:
+      all:
+        - domain: { matches: "*.mail.google.com" }
+        - capability: CAP_INTERACT
+    then:
+      allow: true
+      audit:
+        level: standard
+
+  # Block composing new emails
+  - name: block-compose
+    when:
+      all:
+        - domain: { matches: "*.mail.google.com" }
+        - action: { matches: "*compose*" }
+    then:
+      deny: true
+      reason: "Composing emails is not permitted"
+      audit:
+        level: high
+        notify: ["admin@company.com"]
+
+  # Block sending emails
+  - name: block-send
+    when:
+      all:
+        - domain: { matches: "*.mail.google.com" }
+        - action: { matches: "*send*" }
+    then:
+      deny: true
+      reason: "Sending emails is not permitted"
+      audit:
+        level: critical
+
+  # Block deleting emails
+  - name: block-delete
+    when:
+      all:
+        - domain: { matches: "*.mail.google.com" }
+        - action: { matches: "*delete*" }
+    then:
+      deny: true
+      reason: "Deleting emails is not permitted"
+      audit:
+        level: critical
+
+  # Block any mutation operations
+  - name: block-mutate
+    when:
+      all:
+        - domain: { matches: "*.mail.google.com" }
+        - capability: CAP_MUTATE
+    then:
+      deny: true
+      reason: "Modifying email state is not permitted"
+
+  # Block draft operations
+  - name: block-drafts
+    when:
+      all:
+        - domain: { matches: "*.mail.google.com" }
+        - action: { matches: "*draft*" }
+    then:
+      deny: true
+      reason: "Creating or modifying drafts is not permitted"
+
+defaults:
+  allow: false
+  audit: true

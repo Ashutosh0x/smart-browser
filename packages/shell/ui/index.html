@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark-neon">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self' 'unsafe-eval' https://unpkg.com; connect-src 'self' https:;">
+  <title>Smart Browser</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="lucide.min.js"></script>
+</head>
+
+<body>
+  <div class="app-container">
+    <!-- Title Bar -->
+    <header class="title-bar">
+      <div class="title-bar-drag">
+        <svg class="logo-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path
+            d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
+        </svg>
+        <span class="title">Smart Browser</span>
+      </div>
+
+      <div class="title-bar-right">
+        <span class="agent-count"><span id="agentCount">0</span> agents</span>
+        <button class="hamburger-btn" id="hamburgerBtn" title="Menu">
+          <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="4" x2="20" y1="6" y2="6" />
+            <line x1="4" x2="20" y1="12" y2="12" />
+            <line x1="4" x2="20" y1="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Hamburger Menu Dropdown -->
+    <div class="hamburger-menu" id="hamburgerMenu">
+      <div class="menu-section">
+        <div class="menu-section-title">Profile & Identity</div>
+        <button class="menu-item" data-action="profile">
+          <svg class="menu-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2">
+            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </svg>
+          <span class="menu-label">Profile</span>
+          <span class="menu-hint">Switch, manage</span>
+        </button>
+        <button class="menu-item" data-action="security">
+          <svg class="menu-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
+            <path d="m9 12 2 2 4-4" />
+          </svg>
+          <span class="menu-label">Security & Passkeys</span>
+        </button>
+      </div>
+
+      <div class="menu-divider"></div>
+
+      <div class="menu-section">
+        <div class="menu-section-title">Appearance & UX</div>
+        <button class="menu-item" data-action="appearance">
+          <svg class="menu-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2">
+            <circle cx="13.5" cy="6.5" r=".5" />
+            <circle cx="17.5" cy="10.5" r=".5" />
+            <circle cx="8.5" cy="7.5" r=".5" />
+            <circle cx="6.5" cy="12.5" r=".5" />
+            <path
+              d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.555C21.965 6.012 17.461 2 12 2z" />
+          </svg>
+          <span class="menu-label">Appearance</span>
+        </button>
+        <button class="menu-item" data-action="layout">
+          <svg class="menu-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2">
+            <rect width="7" height="7" x="3" y="3" rx="1" />
+            <rect width="7" height="7" x="14" y="3" rx="1" />
+            <rect width="7" height="7" x="14" y="14" rx="1" />
+            <rect width="7" height="7" x="3" y="14" rx="1" />
+          </svg>
+          <span class="menu-label">Layout & Interaction</span>
+        </button>
+      </div>
+
+      <div class="menu-divider"></div>
+
+      <div class="menu-section">
+        <div class="menu-section-title">Agents & Automation</div>
+        <button class="menu-item" data-action="agents">
+          <svg class="menu-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2">
+            <path d="M12 8V4H8" />
+            <rect width="16" height="12" x="4" y="8" rx="2" />
+            <path d="M2 14h2" />
+            <path d="M20 14h2" />
+            <path d="M15 13v2" />
+            <path d="M9 13v2" />
+          </svg>
+          <span class="menu-label">Agent Manager</span>
+        </button>
+        <button class="menu-item" data-action="automation">
+          <svg class="menu-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2">
+            <path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z" />
+            <path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z" />
+            <path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4" />
+            <path d="M17.599 6.5a3 3 0 0 0 .399-1.375" />
+            <path d="M6.003 5.125A3 3 0 0 0 6.401 6.5" />
+            <path d="M3.477 10.896a4 4 0 0 1 .585-.396" />
+            <path d="M19.938 10.5a4 4 0 0 1 .585.396" />
+            <path d="M6 18a4 4 0 0 1-1.967-.516" />
+            <path d="M19.967 17.484A4 4 0 0 1 18 18" />
+          </svg>
+          <span class="menu-label">Automation Rules</span>
+        </button>
+      </div>
+
+      <div class="menu-divider"></div>
+
+      <div class="menu-section">
+        <div class="menu-section-title">Policies & Compliance</div>
+        <button class="menu-item" data-action="policies">
+          <svg class="menu-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
+          </svg>
+          <span class="menu-label">Policies</span>
+        </button>
+        <button class="menu-item" data-action="audit">
+          <svg class="menu-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2">
+            <path d="M15 12h-5" />
+            <path d="M15 8h-5" />
+            <path d="M19 17V5a2 2 0 0 0-2-2H4" />
+            <path
+              d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3" />
+          </svg>
+          <span class="menu-label">Audit & Logs</span>
+        </button>
+      </div>
+
+      <div class="menu-divider"></div>
+
+      <div class="menu-section">
+        <div class="menu-section-title">Privacy & Adblock</div>
+        <button class="menu-item" data-action="adblock-toggle" id="adblockToggleBtn">
+          <svg class="menu-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
+            <path d="m9 12 2 2 4-4" />
+          </svg>
+          <span class="menu-label">Adblock</span>
+          <span class="menu-hint" id="adblockStatus">Balanced</span>
+        </button>
+        <button class="menu-item collapsible" data-action="toggle-adblock-mode">
+          <svg class="menu-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2">
+            <line x1="21" x2="14" y1="4" y2="4" />
+            <line x1="10" x2="3" y1="4" y2="4" />
+            <line x1="21" x2="12" y1="12" y2="12" />
+            <line x1="8" x2="3" y1="12" y2="12" />
+            <line x1="21" x2="16" y1="20" y2="20" />
+            <line x1="12" x2="3" y1="20" y2="20" />
+            <line x1="14" x2="14" y1="2" y2="6" />
+            <line x1="8" x2="8" y1="10" y2="14" />
+            <line x1="16" x2="16" y1="18" y2="22" />
+          </svg>
+          <span class="menu-label">Adblock Mode</span>
+          <svg class="menu-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2">
+            <path d="m6 9 6 6 6-6" />
+          </svg>
+        </button>
+        <div class="menu-submenu" id="adblockModeSubmenu">
+          <button class="menu-item sub" data-action="adblock-strict">Strict (Block All)</button>
+          <button class="menu-item sub" data-action="adblock-balanced">Balanced</button>
+          <button class="menu-item sub" data-action="adblock-allowlist">Allowlist Only</button>
+          <button class="menu-item sub" data-action="adblock-off">Off</button>
+        </div>
+        <button class="menu-item" data-action="blocked-items">
+          <svg class="menu-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2">
+            <path d="M11 12H3" />
+            <path d="M16 6H3" />
+            <path d="M16 18H3" />
+            <path d="m19 10-4 4" />
+            <path d="m15 10 4 4" />
+          </svg>
+          <span class="menu-label">View Blocked Items</span>
+          <span class="menu-hint" id="blockedCount">0</span>
+        </button>
+      </div>
+
+      <div class="menu-divider"></div>
+
+      <div class="menu-section">
+        <div class="menu-section-title">Browser Core</div>
+        <button class="menu-item" data-action="browser-settings">
+          <i data-lucide="globe" class="menu-icon"></i>
+          <span class="menu-label">Browser Settings</span>
+        </button>
+        <button class="menu-item" data-action="storage">
+          <i data-lucide="database" class="menu-icon"></i>
+          <span class="menu-label">Data & Storage</span>
+        </button>
+      </div>
+
+      <div class="menu-divider"></div>
+
+      <div class="menu-section">
+        <button class="menu-item collapsible" data-action="toggle-advanced">
+          <i data-lucide="flask-conical" class="menu-icon"></i>
+          <span class="menu-label">Advanced</span>
+          <i data-lucide="chevron-down" class="menu-chevron"></i>
+        </button>
+        <div class="menu-submenu" id="advancedSubmenu">
+          <button class="menu-item sub" data-action="debug-overlays">Debug Overlays</button>
+          <button class="menu-item sub" data-action="ai-cursor">Show AI Cursor</button>
+          <button class="menu-item sub" data-action="dom-highlights">DOM Highlights</button>
+          <button class="menu-item sub" data-action="telemetry">Agent Telemetry</button>
+          <button class="menu-item sub" data-action="experiments">Experiments</button>
+        </div>
+      </div>
+
+      <div class="menu-divider"></div>
+
+      <div class="menu-section">
+        <button class="menu-item" data-action="about">
+          <i data-lucide="info" class="menu-icon"></i>
+          <span class="menu-label">About Smart Browser</span>
+          <span class="menu-version">v0.1.0</span>
+        </button>
+        <button class="menu-item danger" data-action="quit">
+          <i data-lucide="power" class="menu-icon"></i>
+          <span class="menu-label">Quit</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Command Bar -->
+    <div class="command-bar">
+      <div class="command-input-wrapper">
+        <i data-lucide="sparkles" class="command-icon"></i>
+        <input type="text" id="commandInput" class="command-input" placeholder="Tell Smart Browser what to do..."
+          autofocus>
+        <button id="executeBtn" class="search-btn" title="Search">
+          <i data-lucide="search"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Layout -->
+    <main class="main-layout">
+      <!-- Left Panel -->
+      <aside class="agent-panel">
+        <h3 class="panel-title">Agents</h3>
+        <div id="agentList" class="agent-list">
+          <div class="empty-state">No agents</div>
+        </div>
+        <button id="newAgentBtn" class="new-agent-btn">
+          <i data-lucide="plus" class="btn-icon"></i> New Agent
+        </button>
+      </aside>
+
+      <!-- Workspace -->
+      <section class="workspace" id="workspace">
+        <div class="workspace-grid" id="workspaceGrid">
+          <div class="workspace-slot" data-slot="0">
+            <div class="slot-header">
+              <button class="slot-close-btn" title="Close Agent"><i data-lucide="x"></i></button>
+              <span class="slot-title">Agent 1</span>
+              <i data-lucide="shield-check" class="slot-adblock-icon" title="Adblock: Active"></i>
+              <button class="slot-explain-btn hidden" data-slot="0" title="Explain this video">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 3l1.4 2.8L17 6.6l-2.2 2.2.5 3.2L12 10.4 8.7 12l.5-3.2L7 6.6l3.6-.8z" />
+                </svg>
+                Explain
+              </button>
+              <span class="slot-status idle">Idle</span>
+            </div>
+            <div class="slot-content" data-agent="agent-1"></div>
+          </div>
+          <div class="workspace-slot" data-slot="1">
+            <div class="slot-header">
+              <button class="slot-close-btn" title="Close Agent"><i data-lucide="x"></i></button>
+              <span class="slot-title">Agent 2</span>
+              <i data-lucide="shield-check" class="slot-adblock-icon" title="Adblock: Active"></i>
+              <button class="slot-explain-btn hidden" data-slot="1" title="Explain this video">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 3l1.4 2.8L17 6.6l-2.2 2.2.5 3.2L12 10.4 8.7 12l.5-3.2L7 6.6l3.6-.8z" />
+                </svg>
+                Explain
+              </button>
+              <span class="slot-status idle">Idle</span>
+            </div>
+            <div class="slot-content" data-agent="agent-2"></div>
+          </div>
+          <div class="workspace-slot" data-slot="2">
+            <div class="slot-header">
+              <button class="slot-close-btn" title="Close Agent"><i data-lucide="x"></i></button>
+              <span class="slot-title">Agent 3</span>
+              <i data-lucide="shield-check" class="slot-adblock-icon" title="Adblock: Active"></i>
+              <button class="slot-explain-btn hidden" data-slot="2" title="Explain this video">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 3l1.4 2.8L17 6.6l-2.2 2.2.5 3.2L12 10.4 8.7 12l.5-3.2L7 6.6l3.6-.8z" />
+                </svg>
+                Explain
+              </button>
+              <span class="slot-status idle">Idle</span>
+            </div>
+            <div class="slot-content" data-agent="agent-3"></div>
+          </div>
+          <div class="workspace-slot" data-slot="3">
+            <div class="slot-header">
+              <button class="slot-close-btn" title="Close Agent"><i data-lucide="x"></i></button>
+              <span class="slot-title">Agent 4</span>
+              <i data-lucide="shield-check" class="slot-adblock-icon" title="Adblock: Active"></i>
+              <button class="slot-explain-btn hidden" data-slot="3" title="Explain this video">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 3l1.4 2.8L17 6.6l-2.2 2.2.5 3.2L12 10.4 8.7 12l.5-3.2L7 6.6l3.6-.8z" />
+                </svg>
+                Explain
+              </button>
+              <span class="slot-status idle">Idle</span>
+            </div>
+            <div class="slot-content" data-agent="agent-4"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right Panel -->
+      <aside class="audit-panel">
+        <h3 class="panel-title">Agent Log</h3>
+        <div id="auditLog" class="audit-log">
+          <div class="log-entry">
+            <span class="log-time">--:--:--</span>
+            <span class="log-text">Ready</span>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Intelligence Panel (Video Explain) -->
+      <aside class="intelligence-panel hidden" id="intelligencePanel">
+        <div class="intel-header">
+          <h3 class="panel-title">
+            <svg class="panel-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2">
+              <path d="M12 3l1.4 2.8L17 6.6l-2.2 2.2.5 3.2L12 10.4 8.7 12l.5-3.2L7 6.6l3.6-.8z" />
+              <path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z" />
+            </svg>
+            Video Explained
+          </h3>
+          <button class="intel-close-btn" id="closeIntelPanel">×</button>
+        </div>
+        <div class="intel-video-info" id="intelVideoInfo">
+          <span class="video-title">Loading...</span>
+        </div>
+        <div class="intel-tabs">
+          <button class="intel-tab active" data-tab="summary">Summary</button>
+          <button class="intel-tab" data-tab="explain">Explained</button>
+          <button class="intel-tab" data-tab="chat">Ask</button>
+        </div>
+        <div class="intel-content" id="intelContent">
+          <div class="intel-loading">
+            <div class="loading-spinner"></div>
+            <span>Analyzing video...</span>
+          </div>
+        </div>
+        <div class="intel-chat" id="intelChat">
+          <input type="text" class="intel-chat-input" id="intelChatInput" placeholder="Ask about this video..." />
+          <button class="intel-send-btn" id="intelSendBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 2L11 13" />
+              <path d="M22 2l-7 20-4-9-9-4 20-7z" />
+            </svg>
+          </button>
+        </div>
+      </aside>
+    </main>
+
+    <!-- Status Bar -->
+    <footer class="status-bar">
+      <span class="status-item">
+        <i data-lucide="check-circle" class="status-icon"></i>
+        Ready
+      </span>
+      <span class="status-item" id="currentUrl">No page loaded</span>
+    </footer>
+  </div>
+
+  <!-- Intelligence Panel (Video Explain) -->
+  <aside class="intelligence-panel hidden" id="intelligencePanel">
+    <div class="intel-header">
+      <div class="intel-title">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 3l1.4 2.8L17 6.6l-2.2 2.2.5 3.2L12 10.4 8.7 12l.5-3.2L7 6.6l3.6-.8z" />
+        </svg>
+        Video Intelligence
+      </div>
+      <button class="intel-close" id="closeIntelPanel">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
+    </div>
+
+    <div class="intel-video-info" id="intelVideoInfo">
+      <span class="video-title">Loading video...</span>
+    </div>
+
+    <div class="intel-tabs">
+      <button class="intel-tab active" data-tab="summary">Summary</button>
+      <button class="intel-tab" data-tab="explain">Explained</button>
+      <button class="intel-tab" data-tab="chat">Ask</button>
+    </div>
+
+    <div class="intel-content" id="intelContent">
+      <div class="intel-loading">
+        <div class="loading-spinner"></div>
+        <span>Analyzing video...</span>
+      </div>
+    </div>
+
+    <div class="intel-chat-input">
+      <input type="text" id="intelChatInput" placeholder="Ask about this video..." />
+      <button id="intelSendBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 2L11 13" />
+          <path d="M22 2l-7 20-4-9-9-4 20-7z" />
+        </svg>
+      </button>
+    </div>
+  </aside>
+
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal" id="modal">
+      <div class="modal-header">
+        <span class="modal-title" id="modalTitle">Settings</span>
+        <button class="modal-close" id="modalClose">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <div class="modal-content" id="modalContent"></div>
+    </div>
+  </div>
+
+
+  <script src="renderer.js"></script>
+  <script src="menu.js"></script>
+  <script src="video-intelligence.js"></script>
+  <script>
+    // Initialize Lucide icons on load
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.lucide) {
+        // v0.5+ uses lucide.createIcons()
+        if (typeof lucide.createIcons === 'function') {
+          lucide.createIcons();
+        } else if (typeof lucide.default !== 'undefined' && typeof lucide.default.createIcons === 'function') {
+          lucide.default.createIcons();
+        } else {
+          // Try replacing icons manually for UMD build
+          console.log('Lucide loaded:', Object.keys(lucide).slice(0, 10));
+        }
+      } else {
+        console.error('Lucide failed to load');
+      }
+    });
+
+    // Retry after short delay in case of timing issues
+    setTimeout(() => {
+      if (window.lucide && typeof lucide.createIcons === 'function') {
+        lucide.createIcons();
+      }
+    }, 100);
+  </script>
+</body>
+
+</html>

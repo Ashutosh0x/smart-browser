@@ -1,0 +1,26 @@
+{
+    "name": "@abos/adblock",
+    "version": "0.1.0",
+    "description": "AB-OS Built-in Adblocker - kernel-level network and DOM protection",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "scripts": {
+        "build": "tsc",
+        "test": "jest",
+        "lint": "eslint src/"
+    },
+    "dependencies": {
+        "zod": "^3.22.0"
+    },
+    "devDependencies": {
+        "@types/node": "^20.0.0",
+        "typescript": "^5.3.0"
+    },
+    "keywords": [
+        "adblock",
+        "privacy",
+        "adblocker",
+        "abos"
+    ],
+    "license": "MIT"
+}

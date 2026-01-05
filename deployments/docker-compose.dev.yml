@@ -1,0 +1,238 @@
+# AB-OS Development Docker Compose
+# Start all services for local development
+
+version: '3.8'
+
+services:
+  # Local LLM (Ollama)
+  ollama:
+    image: ollama/ollama:latest
+    container_name: abos-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # PostgreSQL (Audit Ledger)
+  postgres:
+    image: postgres:16-alpine
+    container_name: abos-postgres
+    environment:
+      POSTGRES_USER: abos
+      POSTGRES_PASSWORD: devpassword
+      POSTGRES_DB: abos
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U abos"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis (Caching, Warm Pool State)
+  redis:
+    image: redis:7-alpine
+    container_name: abos-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MinIO (Object Storage for Snapshots)
+  minio:
+    image: minio/minio:latest
+    container_name: abos-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # Vault (Secrets - Dev Mode)
+  vault:
+    image: hashicorp/vault:latest
+    container_name: abos-vault
+    cap_add:
+      - IPC_LOCK
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: dev-token
+      VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
+    ports:
+      - "8200:8200"
+    healthcheck:
+      test: ["CMD", "vault", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Planner Service
+  planner:
+    build:
+      context: ./packages/planner
+      dockerfile: Dockerfile.dev
+    container_name: abos-planner
+    environment:
+      - LLM_PROVIDER=ollama
+      - LLM_MODEL=llama3:latest
+      - LLM_ENDPOINT=http://ollama:11434
+      - PORT=8001
+      - LOG_LEVEL=debug
+    ports:
+      - "8001:8001"
+    depends_on:
+      ollama:
+        condition: service_healthy
+    volumes:
+      - ./packages/planner:/app
+      - /app/node_modules
+
+  # Policy Authority Service
+  policy-authority:
+    build:
+      context: ./packages/policy-authority
+      dockerfile: Dockerfile.dev
+    container_name: abos-policy-authority
+    environment:
+      - PORT=8002
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_TOKEN=dev-token
+      - POSTGRES_URL=postgres://abos:devpassword@postgres:5432/abos
+      - LOG_LEVEL=debug
+    ports:
+      - "8002:8002"
+    depends_on:
+      vault:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./packages/policy-authority:/app
+      - /app/node_modules
+
+  # Agent Runtime Service
+  agent-runtime:
+    build:
+      context: ./packages/agent-runtime
+      dockerfile: Dockerfile.dev
+    container_name: abos-agent-runtime
+    environment:
+      - PORT=8003
+      - POLICY_ENDPOINT=http://policy-authority:8002
+      - LLM_PROVIDER=ollama
+      - LLM_MODEL=mistral:latest
+      - LLM_ENDPOINT=http://ollama:11434
+      - REDIS_URL=redis://redis:6379
+      - LOG_LEVEL=debug
+    ports:
+      - "8003:8003"
+    depends_on:
+      - policy-authority
+      - redis
+      - ollama
+    volumes:
+      - ./packages/agent-runtime:/app
+      - /app/node_modules
+
+  # Executor Service
+  executor:
+    build:
+      context: ./packages/executor
+      dockerfile: Dockerfile.dev
+    container_name: abos-executor
+    environment:
+      - PORT=8004
+      - POLICY_ENDPOINT=http://policy-authority:8002
+      - POSTGRES_URL=postgres://abos:devpassword@postgres:5432/abos
+      - LOG_LEVEL=debug
+    ports:
+      - "8004:8004"
+    depends_on:
+      - policy-authority
+      - postgres
+    volumes:
+      - ./packages/executor:/app
+      - /app/node_modules
+
+  # Observability Service
+  observability:
+    build:
+      context: ./packages/observability
+      dockerfile: Dockerfile.dev
+    container_name: abos-observability
+    environment:
+      - PORT=8005
+      - POSTGRES_URL=postgres://abos:devpassword@postgres:5432/abos
+      - S3_ENDPOINT=http://minio:9000
+      - S3_ACCESS_KEY=minioadmin
+      - S3_SECRET_KEY=minioadmin
+      - S3_BUCKET=abos-snapshots
+      - LOG_LEVEL=debug
+    ports:
+      - "8005:8005"
+    depends_on:
+      - postgres
+      - minio
+    volumes:
+      - ./packages/observability:/app
+      - /app/node_modules
+
+  # IDE (Next.js Dashboard)
+  ide:
+    build:
+      context: ./packages/ide
+      dockerfile: Dockerfile.dev
+    container_name: abos-ide
+    environment:
+      - NEXT_PUBLIC_PLANNER_URL=http://localhost:8001
+      - NEXT_PUBLIC_AGENT_RUNTIME_URL=http://localhost:8003
+      - NEXT_PUBLIC_POLICY_URL=http://localhost:8002
+      - NEXT_PUBLIC_OBSERVABILITY_URL=http://localhost:8005
+    ports:
+      - "3000:3000"
+    depends_on:
+      - planner
+      - agent-runtime
+      - policy-authority
+      - observability
+    volumes:
+      - ./packages/ide:/app
+      - /app/node_modules
+      - /app/.next
+
+volumes:
+  ollama-data:
+  postgres-data:
+  redis-data:
+  minio-data:
+
+networks:
+  default:
+    name: abos-network

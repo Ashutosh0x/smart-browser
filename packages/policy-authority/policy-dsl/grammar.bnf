@@ -1,0 +1,127 @@
+# AB-OS Policy DSL Grammar (BNF)
+
+# Top-level policy structure
+<policy> ::= "policy:" <policy-header> "rules:" <rule-list> ["defaults:" <defaults>]
+
+<policy-header> ::= "name:" <string>
+                   "version:" <semver>
+                   "description:" <string>
+
+# Rules
+<rule-list> ::= <rule> | <rule> <rule-list>
+
+<rule> ::= "- name:" <string>
+          "when:" <condition>
+          "then:" <action>
+
+# Conditions
+<condition> ::= <simple-condition>
+              | "all:" <condition-list>
+              | "any:" <condition-list>
+              | "not:" <condition>
+
+<condition-list> ::= "- " <condition> | "- " <condition> <condition-list>
+
+<simple-condition> ::= <capability-condition>
+                     | <domain-condition>
+                     | <amount-condition>
+                     | <time-condition>
+                     | <agent-condition>
+                     | <action-condition>
+
+<capability-condition> ::= "capability:" <capability>
+                         | "capability:" "{" "in:" <capability-list> "}"
+
+<domain-condition> ::= "domain:" <string>
+                     | "domain:" "{" "in:" <string-list> "}"
+                     | "domain:" "{" "matches:" <pattern> "}"
+                     | "domain:" "{" "not_in:" <string-list> "}"
+
+<amount-condition> ::= "amount:" "{" <comparison> "}"
+
+<comparison> ::= "gt:" <number>
+               | "gte:" <number>
+               | "lt:" <number>
+               | "lte:" <number>
+               | "eq:" <number>
+               | <comparison> "," <comparison>
+
+<time-condition> ::= "time:" "{" <time-spec> "}"
+
+<time-spec> ::= "after:" <time-string> ["before:" <time-string>] ["timezone:" <string>]
+              | "before:" <time-string> ["timezone:" <string>]
+
+<agent-condition> ::= "agent:" "{" <agent-spec> "}"
+
+<agent-spec> ::= "id:" <string-match>
+               | "tier:" <string>
+               | <agent-spec> <agent-spec>
+
+<action-condition> ::= "action:" "{" "matches:" <pattern> "}"
+
+<string-match> ::= <string>
+                 | "{" "matches:" <pattern> "}"
+
+# Actions
+<action> ::= <allow-action>
+           | <deny-action>
+           | <approval-action>
+           | <constrain-action>
+           | <audit-action>
+           | <action> <action>
+
+<allow-action> ::= "allow:" <boolean>
+
+<deny-action> ::= "deny:" <boolean>
+                 ["reason:" <string>]
+
+<approval-action> ::= "require_approval:" "{" <approval-spec> "}"
+
+<approval-spec> ::= "type:" <approval-type>
+                   ["timeout:" <duration>]
+                   ["approvers:" <string-list>]
+                   ["message:" <string>]
+
+<approval-type> ::= "human" | "manager" | "admin"
+
+<constrain-action> ::= "constrain:" "{" <constraint-list> "}"
+
+<constraint-list> ::= <constraint> | <constraint> <constraint-list>
+
+<constraint> ::= "max_amount:" <number>
+               | "domains:" <string-list>
+               | "pii_access:" <boolean>
+               | "time_limit:" <duration>
+
+<audit-action> ::= "audit:" "{" <audit-spec> "}"
+
+<audit-spec> ::= "level:" <audit-level>
+                ["notify:" <string-list>]
+
+<audit-level> ::= "low" | "standard" | "high" | "critical"
+
+# Defaults
+<defaults> ::= "allow:" <boolean>
+              ["audit:" <boolean>]
+
+# Terminals
+<capability> ::= "CAP_READ" | "CAP_INTERACT" | "CAP_NAVIGATE"
+               | "CAP_MUTATE" | "CAP_PURCHASE" | "CAP_PII" | "CAP_ADMIN"
+
+<capability-list> ::= "[" <capability> {"," <capability>} "]"
+
+<string-list> ::= "[" <string> {"," <string>} "]"
+
+<string> ::= '"' <characters> '"'
+
+<pattern> ::= '"' <glob-pattern> '"'
+
+<number> ::= <digit>+
+
+<boolean> ::= "true" | "false"
+
+<duration> ::= <number> ("s" | "m" | "h" | "d")
+
+<semver> ::= '"' <digit>+ "." <digit>+ "." <digit>+ '"'
+
+<time-string> ::= '"' <HH> ":" <MM> '"'

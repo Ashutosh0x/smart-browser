@@ -1,0 +1,67 @@
+{
+    "name": "@abos/shell",
+    "version": "0.1.0",
+    "description": "Smart Browser - AI-Native Browser OS with Multi-Agent Workspace",
+    "main": "main.js",
+    "type": "commonjs",
+    "author": {
+        "name": "Ashutosh Kumar Singh",
+        "email": "ashutoshkumarsingh0x@gmail.com"
+    },
+    "scripts": {
+        "start": "electron .",
+        "dev": "electron . --dev",
+        "build": "electron-builder --win",
+        "build:all": "electron-builder --win --mac --linux"
+    },
+    "dependencies": {
+        "dotenv": "^16.6.1",
+        "lucide": "^0.562.0"
+    },
+    "devDependencies": {
+        "@types/node": "^20.0.0",
+        "electron": "^28.0.0",
+        "electron-builder": "^24.6.4"
+    },
+    "build": {
+        "appId": "com.smartbrowser.app",
+        "productName": "Smart Browser",
+        "directories": {
+            "output": "dist"
+        },
+        "files": [
+            "main.js",
+            "preload.js",
+            "ui/**/*",
+            "node_modules/**/*",
+            "../video-intelligence/dist/**/*",
+            "../adblock/dist/**/*",
+            "../planner/dist/**/*"
+        ],
+        "win": {
+            "target": [
+                {
+                    "target": "nsis",
+                    "arch": [
+                        "x64"
+                    ]
+                },
+                {
+                    "target": "portable",
+                    "arch": [
+                        "x64"
+                    ]
+                }
+            ],
+            "icon": "ui/assets/icon.ico"
+        },
+        "nsis": {
+            "oneClick": false,
+            "allowToChangeInstallationDirectory": true,
+            "createDesktopShortcut": true
+        },
+        "portable": {
+            "artifactName": "SmartBrowser-Portable-${version}.exe"
+        }
+    }
+}

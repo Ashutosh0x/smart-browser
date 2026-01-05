@@ -1,0 +1,69 @@
+# Purchase Limit Policy
+# Restricts purchase amounts and requires human approval for large transactions
+
+policy:
+  name: purchase-limit
+  version: "1.0.0"
+  description: "Limit purchase amounts and require approval for large transactions"
+
+rules:
+  # Block purchases over $500
+  - name: block-high-value
+    when:
+      all:
+        - capability: CAP_PURCHASE
+        - amount: { gt: 500 }
+    then:
+      deny: true
+      reason: "Purchases over $500 are not allowed"
+      audit:
+        level: critical
+        notify: ["security@company.com"]
+
+  # Require human approval for $100-$500
+  - name: approve-medium-value
+    when:
+      all:
+        - capability: CAP_PURCHASE
+        - amount: { gt: 100, lte: 500 }
+    then:
+      require_approval:
+        type: human
+        timeout: 600s
+        message: "Approve purchase of ${amount} on ${domain}?"
+      audit:
+        level: high
+
+  # Allow purchases $100 and under
+  - name: allow-low-value
+    when:
+      all:
+        - capability: CAP_PURCHASE
+        - amount: { lte: 100 }
+    then:
+      allow: true
+      constrain:
+        max_amount: 100
+      audit:
+        level: standard
+
+  # Restrict purchases to approved retailers
+  - name: restrict-retailers
+    when:
+      all:
+        - capability: CAP_PURCHASE
+        - domain:
+            not_in:
+              - "amazon.com"
+              - "*.amazon.com"
+              - "ebay.com"
+              - "*.ebay.com"
+              - "walmart.com"
+              - "*.walmart.com"
+    then:
+      deny: true
+      reason: "Purchases only allowed on approved retailers"
+
+defaults:
+  allow: false
+  audit: true
