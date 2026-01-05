@@ -30,10 +30,7 @@ jobs:
         run: npm install
 
       - name: Build Shell
-        run: |
-          cd packages/shell
-          npm install
-          npm run build
+        run: npm run build -w packages/shell
 
       - name: Release
         uses: softprops/action-gh-release@v1
