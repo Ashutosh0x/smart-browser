@@ -13,6 +13,7 @@
 </head>
 
 <body>
+  <div class="wallpaper-layer" id="wallpaperLayer"></div>
   <div class="app-container">
     <!-- Title Bar -->
     <header class="title-bar">
@@ -26,7 +27,171 @@
       </div>
 
       <div class="title-bar-right">
-        <span class="agent-count"><span id="agentCount">0</span> agents</span>
+        <!-- Advanced Mode Toggle -->
+        <div class="advanced-toggle-wrapper">
+          <span class="toggle-label">Advanced</span>
+          <label class="switch">
+            <input type="checkbox" id="advancedModeToggle">
+            <span class="slider round"></span>
+          </label>
+        </div>
+
+        <!-- Wallet Wrapper -->
+        <div class="wallet-wrapper">
+          <button class="title-bar-icon-btn" id="walletBtn" title="Wallet">
+            <div class="icon-status-badge unlocked"></div>
+            <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" />
+              <path d="M3 5v14a2 2 0 0 0 2 2h16v-5" />
+              <path d="M18 12a2 2 0 0 0 0 4h4v-4Z" />
+            </svg>
+          </button>
+
+          <!-- Secure Wallet Panel -->
+          <div class="wallet-panel" id="walletPanel">
+            <div class="wallet-header">
+              <div class="wallet-selector-btn">
+                <i data-lucide="menu"></i>
+                <div class="current-wallet">
+                  <span class="wallet-icon">🟣</span>
+                  <span class="wallet-name">Phantom</span>
+                </div>
+              </div>
+              <div class="wallet-header-actions">
+                <i data-lucide="more-horizontal"></i>
+              </div>
+            </div>
+
+            <div class="wallet-balance-section">
+              <div class="balance-label">
+                Total Balance <i data-lucide="eye" class="icon-tiny"></i>
+              </div>
+              <div class="balance-amount">$12,450.23 <span class="currency">USD</span></div>
+
+              <div class="wallet-actions">
+                <button class="wallet-action-btn">Deposit</button>
+                <button class="wallet-action-btn">Send</button>
+                <button class="wallet-action-btn">Swap</button>
+              </div>
+            </div>
+
+            <div class="wallet-assets">
+              <div class="asset-item">
+                <div class="asset-info">
+                  <div class="asset-logo sol">SOL</div>
+                  <div class="asset-details">
+                    <div class="asset-symbol">SOL</div>
+                    <div class="asset-balance">15.5</div>
+                  </div>
+                </div>
+                <div class="asset-value">15.5 USD</div>
+              </div>
+
+              <div class="asset-item">
+                <div class="asset-info">
+                  <div class="asset-logo usdc">S</div>
+                  <div class="asset-details">
+                    <div class="asset-symbol">USDC</div>
+                    <div class="asset-balance">500.00</div>
+                  </div>
+                </div>
+                <div class="asset-value">500.00 USD</div>
+              </div>
+
+              <div class="asset-item">
+                <div class="asset-info">
+                  <div class="asset-logo eth">ETH</div>
+                  <div class="asset-details">
+                    <div class="asset-symbol">ETH</div>
+                    <div class="asset-balance">0.5</div>
+                  </div>
+                </div>
+                <div class="asset-value">0.50 USD</div>
+              </div>
+            </div>
+
+            <div class="wallet-section-header">Recent Activity</div>
+            <div class="wallet-activity">
+              <div class="activity-item">
+                <div class="activity-icon"><i data-lucide="arrow-up-right"></i></div>
+                <div class="activity-details">
+                  <div class="activity-type">Deposit</div>
+                  <div class="activity-time">1 hour ago</div>
+                </div>
+                <div class="activity-amount">+$500.00</div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-icon"><i data-lucide="arrow-left-right"></i></div>
+                <div class="activity-details">
+                  <div class="activity-type">Payment to Agent 1</div>
+                  <div class="activity-time">2 hours ago</div>
+                </div>
+                <div class="activity-amount text-error">-$25.00</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Folder Icon -->
+        <button class="title-bar-icon-btn" id="folderBtn" title="Secure Storage">
+          <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path
+              d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z" />
+          </svg>
+        </button>
+
+        <!-- 9-Dot App Launcher -->
+        <button class="title-bar-icon-btn" id="appLauncherBtn" title="Secure Apps (Ctrl+K)">
+          <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="6" cy="6" r="1.5" />
+            <circle cx="12" cy="6" r="1.5" />
+            <circle cx="18" cy="6" r="1.5" />
+            <circle cx="6" cy="12" r="1.5" />
+            <circle cx="12" cy="12" r="1.5" />
+            <circle cx="18" cy="12" r="1.5" />
+            <circle cx="6" cy="18" r="1.5" />
+            <circle cx="12" cy="18" r="1.5" />
+            <circle cx="18" cy="18" r="1.5" />
+          </svg>
+        </button>
+
+        <!-- Profile Picture & Dropdown -->
+        <div class="profile-wrapper">
+          <button class="title-bar-profile-btn" id="profileBtn" title="Profile">
+            <div class="profile-picture">
+              <svg class="profile-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+            </div>
+          </button>
+
+          <!-- Profile Dropdown Menu -->
+          <div class="profile-dropdown" id="profileDropdown">
+            <div class="profile-dropdown-item" data-action="profile">
+              <i data-lucide="user"></i>
+              <span>Profile</span>
+            </div>
+            <div class="profile-dropdown-item" data-action="settings">
+              <i data-lucide="settings"></i>
+              <span>Settings</span>
+            </div>
+            <div class="profile-dropdown-item" data-action="help">
+              <i data-lucide="help-circle"></i>
+              <span>Help & Support</span>
+            </div>
+            <div class="profile-dropdown-divider"></div>
+            <div class="profile-dropdown-item danger" data-action="signout">
+              <i data-lucide="log-out"></i>
+              <span>Sign Out</span>
+            </div>
+          </div>
+        </div>
+
         <button class="hamburger-btn" id="hamburgerBtn" title="Menu">
           <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -37,6 +202,36 @@
         </button>
       </div>
     </header>
+
+    <!-- Tab Navigation Bar -->
+    <nav class="tab-navigation">
+      <div class="tabs-container" id="tabsContainer">
+        <!-- Tab 1 -->
+        <div class="tab active" data-slot="0" style="--tab-color: #4285f4;">
+          <img src="https://www.google.com/favicon.ico" class="tab-favicon">
+          <span class="tab-title">Google Gemini</span>
+          <button class="tab-close">×</button>
+        </div>
+        <!-- Tab 2 -->
+        <div class="tab" data-slot="1" style="--tab-color: #0077b5;">
+          <img src="https://static.licdn.com/sc/h/ak2ssgu08928ni1bs9t064qn" class="tab-favicon">
+          <span class="tab-title">LinkedIn Feed</span>
+          <button class="tab-close">×</button>
+        </div>
+        <!-- Tab 3 -->
+        <div class="tab" data-slot="2" style="--tab-color: #ea4335;">
+          <img src="https://mail.google.com/favicon.ico" class="tab-favicon">
+          <span class="tab-title">Inbox (24,912)</span>
+          <button class="tab-close">×</button>
+        </div>
+      </div>
+      <button class="add-tab-btn" id="addTabBtn" title="New Agent">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+      </button>
+    </nav>
 
     <!-- Hamburger Menu Dropdown -->
     <div class="hamburger-menu" id="hamburgerMenu">
@@ -250,6 +445,9 @@
         <i data-lucide="sparkles" class="command-icon"></i>
         <input type="text" id="commandInput" class="command-input" placeholder="Tell Smart Browser what to do..."
           autofocus>
+        <button id="micBtn" class="mic-btn" title="Voice Command">
+          <i data-lucide="mic"></i>
+        </button>
         <button id="executeBtn" class="search-btn" title="Search">
           <i data-lucide="search"></i>
         </button>
@@ -276,61 +474,54 @@
             <div class="slot-header">
               <button class="slot-close-btn" title="Close Agent"><i data-lucide="x"></i></button>
               <span class="slot-title">Agent 1</span>
-              <i data-lucide="shield-check" class="slot-adblock-icon" title="Adblock: Active"></i>
-              <button class="slot-explain-btn hidden" data-slot="0" title="Explain this video">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M12 3l1.4 2.8L17 6.6l-2.2 2.2.5 3.2L12 10.4 8.7 12l.5-3.2L7 6.6l3.6-.8z" />
-                </svg>
-                Explain
-              </button>
               <span class="slot-status idle">Idle</span>
             </div>
-            <div class="slot-content" data-agent="agent-1"></div>
+            <div class="slot-content empty" data-agent="agent-1">
+              <div class="agent-placeholder">
+                <i data-lucide="bot" class="placeholder-icon"></i>
+                <span class="placeholder-text">Agent Ready</span>
+                <span class="placeholder-hint">Type a command to start</span>
+              </div>
+            </div>
           </div>
           <div class="workspace-slot" data-slot="1">
             <div class="slot-header">
               <button class="slot-close-btn" title="Close Agent"><i data-lucide="x"></i></button>
               <span class="slot-title">Agent 2</span>
-              <i data-lucide="shield-check" class="slot-adblock-icon" title="Adblock: Active"></i>
-              <button class="slot-explain-btn hidden" data-slot="1" title="Explain this video">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M12 3l1.4 2.8L17 6.6l-2.2 2.2.5 3.2L12 10.4 8.7 12l.5-3.2L7 6.6l3.6-.8z" />
-                </svg>
-                Explain
-              </button>
               <span class="slot-status idle">Idle</span>
             </div>
-            <div class="slot-content" data-agent="agent-2"></div>
+            <div class="slot-content empty" data-agent="agent-2">
+              <div class="agent-placeholder">
+                <i data-lucide="bot" class="placeholder-icon"></i>
+                <span class="placeholder-text">Agent Ready</span>
+              </div>
+            </div>
           </div>
           <div class="workspace-slot" data-slot="2">
             <div class="slot-header">
               <button class="slot-close-btn" title="Close Agent"><i data-lucide="x"></i></button>
               <span class="slot-title">Agent 3</span>
-              <i data-lucide="shield-check" class="slot-adblock-icon" title="Adblock: Active"></i>
-              <button class="slot-explain-btn hidden" data-slot="2" title="Explain this video">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M12 3l1.4 2.8L17 6.6l-2.2 2.2.5 3.2L12 10.4 8.7 12l.5-3.2L7 6.6l3.6-.8z" />
-                </svg>
-                Explain
-              </button>
               <span class="slot-status idle">Idle</span>
             </div>
-            <div class="slot-content" data-agent="agent-3"></div>
+            <div class="slot-content empty" data-agent="agent-3">
+              <div class="agent-placeholder">
+                <i data-lucide="bot" class="placeholder-icon"></i>
+                <span class="placeholder-text">Agent Ready</span>
+              </div>
+            </div>
           </div>
           <div class="workspace-slot" data-slot="3">
             <div class="slot-header">
               <button class="slot-close-btn" title="Close Agent"><i data-lucide="x"></i></button>
               <span class="slot-title">Agent 4</span>
-              <i data-lucide="shield-check" class="slot-adblock-icon" title="Adblock: Active"></i>
-              <button class="slot-explain-btn hidden" data-slot="3" title="Explain this video">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M12 3l1.4 2.8L17 6.6l-2.2 2.2.5 3.2L12 10.4 8.7 12l.5-3.2L7 6.6l3.6-.8z" />
-                </svg>
-                Explain
-              </button>
               <span class="slot-status idle">Idle</span>
             </div>
-            <div class="slot-content" data-agent="agent-4"></div>
+            <div class="slot-content empty" data-agent="agent-4">
+              <div class="agent-placeholder">
+                <i data-lucide="bot" class="placeholder-icon"></i>
+                <span class="placeholder-text">Agent Ready</span>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -346,42 +537,45 @@
         </div>
       </aside>
 
-      <!-- Intelligence Panel (Video Explain) -->
-      <aside class="intelligence-panel hidden" id="intelligencePanel">
-        <div class="intel-header">
-          <h3 class="panel-title">
-            <svg class="panel-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              stroke-width="2">
-              <path d="M12 3l1.4 2.8L17 6.6l-2.2 2.2.5 3.2L12 10.4 8.7 12l.5-3.2L7 6.6l3.6-.8z" />
-              <path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z" />
-            </svg>
-            Video Explained
-          </h3>
-          <button class="intel-close-btn" id="closeIntelPanel">×</button>
+      <!-- Folders Sidebar -->
+      <aside class="folders-sidebar" id="foldersSidebar">
+        <div class="folders-header">
+          <h3 class="folders-title">FOLDERS</h3>
         </div>
-        <div class="intel-video-info" id="intelVideoInfo">
-          <span class="video-title">Loading...</span>
-        </div>
-        <div class="intel-tabs">
-          <button class="intel-tab active" data-tab="summary">Summary</button>
-          <button class="intel-tab" data-tab="explain">Explained</button>
-          <button class="intel-tab" data-tab="chat">Ask</button>
-        </div>
-        <div class="intel-content" id="intelContent">
-          <div class="intel-loading">
-            <div class="loading-spinner"></div>
-            <span>Analyzing video...</span>
+        <div class="folders-search">
+          <div class="folders-search-wrapper">
+            <i data-lucide="search"></i>
+            <input type="text" placeholder="Search">
           </div>
         </div>
-        <div class="intel-chat" id="intelChat">
-          <input type="text" class="intel-chat-input" id="intelChatInput" placeholder="Ask about this video..." />
-          <button class="intel-send-btn" id="intelSendBtn">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M22 2L11 13" />
-              <path d="M22 2l-7 20-4-9-9-4 20-7z" />
-            </svg>
-          </button>
+        <div class="folders-list">
+          <div class="folder-item">
+            <i data-lucide="folder"></i>
+            <span>Documents</span>
+          </div>
+          <div class="folder-item">
+            <i data-lucide="folder"></i>
+            <span>Downloads</span>
+          </div>
+          <div class="folder-item">
+            <i data-lucide="folder"></i>
+            <span>Projects</span>
+          </div>
+          <div class="folder-item">
+            <i data-lucide="folder"></i>
+            <span>Scripts</span>
+          </div>
+          <div class="folder-item">
+            <i data-lucide="folder"></i>
+            <span>Temp</span>
+          </div>
+          <div class="folder-item">
+            <i data-lucide="folder"></i>
+            <span>Archive</span>
+          </div>
         </div>
+      </aside>
+
       </aside>
     </main>
 
@@ -452,35 +646,13 @@
     </div>
   </div>
 
+  <!-- Secure App Launcher Web Component -->
+  <secure-launcher id="secureLauncher"></secure-launcher>
 
+  <script src="app-launcher/secure-launcher.js"></script>
   <script src="renderer.js"></script>
   <script src="menu.js"></script>
   <script src="video-intelligence.js"></script>
-  <script>
-    // Initialize Lucide icons on load
-    document.addEventListener('DOMContentLoaded', () => {
-      if (window.lucide) {
-        // v0.5+ uses lucide.createIcons()
-        if (typeof lucide.createIcons === 'function') {
-          lucide.createIcons();
-        } else if (typeof lucide.default !== 'undefined' && typeof lucide.default.createIcons === 'function') {
-          lucide.default.createIcons();
-        } else {
-          // Try replacing icons manually for UMD build
-          console.log('Lucide loaded:', Object.keys(lucide).slice(0, 10));
-        }
-      } else {
-        console.error('Lucide failed to load');
-      }
-    });
-
-    // Retry after short delay in case of timing issues
-    setTimeout(() => {
-      if (window.lucide && typeof lucide.createIcons === 'function') {
-        lucide.createIcons();
-      }
-    }, 100);
-  </script>
 </body>
 
 </html>

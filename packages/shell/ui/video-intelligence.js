@@ -91,8 +91,8 @@
                 showError(result?.error || 'Failed to generate explanation');
             }
         } catch (error) {
-            console.error('[VideoIntel] Error:', error);
-            showError(error.message);
+            console.error('[VideoIntel] Failed to load tab content:', tabName, error);
+            showError(error.message || 'Failed to generate explanation');
         }
     }
 
@@ -181,6 +181,7 @@
             });
             chatHistory.push({ role: 'ai', content: response || 'No response' });
         } catch (error) {
+            console.error('[VideoIntel] Failed to send chat message:', error);
             chatHistory.push({ role: 'ai', content: `Error: ${error.message}` });
         }
 

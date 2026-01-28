@@ -66,12 +66,22 @@ function openModal(title, content) {
   modalContent.innerHTML = content;
   modalOverlay.classList.add('open');
   closeMenu();
+
+  // Keep views hidden while modal is open
+  if (window.electronAPI && window.electronAPI.toggleViews) {
+    window.electronAPI.toggleViews(false);
+  }
+
   // Re-init icons in modal
   if (window.lucide) lucide.createIcons();
 }
 
 function closeModal() {
   modalOverlay.classList.remove('open');
+  // Re-enable views when modal closes
+  if (window.electronAPI && window.electronAPI.toggleViews) {
+    window.electronAPI.toggleViews(true);
+  }
 }
 
 modalClose.addEventListener('click', closeModal);
@@ -158,8 +168,10 @@ const menuActions = {
             <i data-lucide="image" class="icon-small"></i>
           </div>
           <div class="wallpaper-box">
-            <div class="wallpaper-preview" id="wallpaperPreview" style="background-image: ${currentSettings.wallpaper ? `url(${currentSettings.wallpaper})` : 'none'}"></div>
-            <button class="action-btn" id="uploadWallpaperBtn">Change Wallpaper</button>
+            <div class="wallpaper-preview-wrapper">
+              <div class="wallpaper-preview" id="wallpaperPreview" style="background-image: ${currentSettings.wallpaper ? `url(${currentSettings.wallpaper})` : 'none'}"></div>
+              <button class="action-btn" id="uploadWallpaperBtn">Change Wallpaper</button>
+            </div>
             <input type="file" id="wallpaperInput" accept="image/*" style="display: none">
           </div>
         </div>
@@ -188,6 +200,11 @@ const menuActions = {
         card.classList.add('active');
         currentSettings.theme = card.dataset.theme;
         document.documentElement.setAttribute('data-theme', currentSettings.theme);
+
+        // Notify main process to update agent backgrounds
+        if (window.electronAPI && window.electronAPI.setTheme) {
+          window.electronAPI.setTheme(currentSettings.theme);
+        }
       };
     });
 
@@ -224,10 +241,18 @@ const menuActions = {
         const reader = new FileReader();
         reader.onload = (re) => {
           currentSettings.wallpaper = re.target.result;
-          wallPreview.style.backgroundImage = `url(${currentSettings.wallpaper})`;
-          document.body.style.backgroundImage = `url(${currentSettings.wallpaper})`;
-          document.body.style.backgroundSize = 'cover';
-          document.body.style.backgroundPosition = 'center';
+
+          // Update preview in modal
+          if (wallPreview) wallPreview.style.backgroundImage = `url(${currentSettings.wallpaper})`;
+
+          // Update actual wallpaper layer
+          const wallLayer = document.getElementById('wallpaperLayer');
+          if (wallLayer) {
+            wallLayer.style.backgroundImage = `url(${currentSettings.wallpaper})`;
+            document.body.classList.add('has-wallpaper');
+          }
+
+          console.log('[Appearance] Wallpaper updated');
         };
         reader.readAsDataURL(file);
       }

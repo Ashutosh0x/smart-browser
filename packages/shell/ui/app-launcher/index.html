@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'unsafe-inline';">
+    <title>Secure App Launcher</title>
+    <style>
+        /* Minimal global styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #0a0a0f;
+            color: white;
+            overflow: hidden;
+        }
+        
+        /* Six-dot trigger button */
+        .launcher-trigger {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 48px;
+            height: 48px;
+            background: rgba(30, 30, 35, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            z-index: 999998;
+        }
+        
+        .launcher-trigger:hover {
+            background: rgba(50, 50, 60, 1);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
+        
+        .launcher-trigger:active {
+            transform: scale(0.95);
+        }
+        
+        /* Six dots icon */
+        .dots {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 4px;
+            width: 24px;
+            height: 24px;
+        }
+        
+        .dot {
+            width: 6px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 50%;
+            transition: background 0.2s ease;
+        }
+        
+        .launcher-trigger:hover .dot {
+            background: rgba(255, 255, 255, 0.9);
+        }
+        
+        /* Demo content (just for testing) */
+        .demo-content {
+            padding: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .demo-content h1 {
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .demo-content p {
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1.6;
+            margin-bottom: 12px;
+        }
+        
+        .demo-content code {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Six-dot launcher trigger -->
+    <button class="launcher-trigger" id="launcherTrigger" aria-label="Open secure apps">
+        <div class="dots">
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+        </div>
+    </button>
+    
+    <!-- Secure launcher Web Component -->
+    <secure-launcher id="secureLauncher"></secure-launcher>
+    
+    <!-- Demo content -->
+    <div class="demo-content">
+        <h1>Smart Browser</h1>
+        <p>Welcome to the most secure browser with native security apps.</p>
+        <p>Click the <strong>six dots</strong> in the top-right corner to open the secure app launcher.</p>
+        <p>Or press <code>Ctrl/Cmd + K</code> to open the command palette.</p>
+        <p>&nbsp;</p>
+        <p><strong>Features:</strong></p>
+        <p>🔑 Web3 Wallet (all chains)</p>
+        <p>🔐 Password Manager (zero-knowledge vault)</p>
+        <p>🌐 Built-in VPN (WireGuard)</p>
+        <p>👤 Identity & Passkeys (WebAuthn)</p>
+        <p>🛡️ Permissions & Security</p>
+    </div>
+    
+    <!-- Load Web Component -->
+    <script src="secure-launcher.js"></script>
+    
+    <!-- Integration script -->
+    <script>
+        'use strict';
+        
+        // Get references
+        const trigger = document.getElementById('launcherTrigger');
+        const launcher = document.getElementById('secureLauncher');
+        
+        // Open launcher on button click
+        trigger.addEventListener('click', () => {
+            launcher.open();
+        });
+        
+        // Keyboard shortcut: Ctrl/Cmd + K
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                launcher.open();
+            }
+        });
+        
+        // Listen to launcher events
+        launcher.addEventListener('launcher-open', () => {
+            console.log('[UI] Launcher opened');
+        });
+        
+        launcher.addEventListener('launcher-close', () => {
+            console.log('[UI] Launcher closed');
+        });
+        
+        launcher.addEventListener('app-launch', async (e) => {
+            const { appId, riskLevel } = e.detail;
+            console.log(`[UI] App launch requested: ${appId} (risk: ${riskLevel})`);
+            
+            // In production, this would communicate with main process via IPC
+            // For now, just show an alert
+            if (typeof window.electronAPI !== 'undefined') {
+                // Electron IPC available
+                const result = await window.electronAPI.launchSecureApp(appId, riskLevel);
+                console.log('[UI] App launch result:', result);
+            } else {
+                // Demo mode
+                alert(`Launching ${appId} app...\\n\\nIn production, this would:\\n1. Check permissions\\n2. Authenticate user (if high-risk)\\n3. Spawn secure context\\n4. Load app UI`);
+            }
+        });
+        
+        console.log('[UI] Secure launcher ready');
+    </script>
+</body>
+</html>

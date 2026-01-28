@@ -4,6 +4,20 @@
  * With hover + fullscreen interaction physics
  */
 
+// Import configuration constants
+const CONFIG = {
+    TIMING: {
+        FULLSCREEN_TRANSITION_DELAY: 220,
+        FULLSCREEN_ENTER_DELAY: 50,
+        RESIZE_DEBOUNCE_DELAY: 100,
+        AGENT_INIT_DELAY: 100,
+        STEP_EXECUTION_DELAY: 1000,
+    },
+    AGENT: {
+        MAX_AGENTS: 4,
+    }
+};
+
 // =============================================================================
 // State
 // =============================================================================
@@ -23,7 +37,6 @@ const URL_PATTERN = /^(https?:\/\/)?([\w-]+\.)+[\w-]+(\/[\w-./?%&=]*)?$/i;
 const commandInput = document.getElementById('commandInput');
 const executeBtn = document.getElementById('executeBtn');
 const agentList = document.getElementById('agentList');
-const agentCount = document.getElementById('agentCount');
 const auditLog = document.getElementById('auditLog');
 const workspaceGrid = document.getElementById('workspaceGrid');
 const newAgentBtn = document.getElementById('newAgentBtn');
@@ -78,19 +91,20 @@ function enterFullscreen(slot) {
     mainLayout.classList.add('fullscreen-mode');
     slotEl.classList.add('fullscreen');
 
-    // Update BrowserView bounds after transition
+    // Move ALL other agents off-screen, and set focused agent bounds
     setTimeout(() => {
-        const agentData = Array.from(agents.values()).find(a => a.slot === slot);
-        if (agentData) {
-            const agentId = Array.from(agents.entries()).find(([id, data]) => data.slot === slot)?.[0];
-            if (agentId) {
+        agents.forEach((data, agentId) => {
+            if (data.slot === slot) {
                 const newBounds = getSlotBounds(slot);
                 if (newBounds) {
                     window.abos.setBounds(agentId, newBounds);
                 }
+            } else {
+                // Move off-screen
+                window.abos.setBounds(agentId, { x: -9999, y: -9999, width: 1, height: 1 });
             }
-        }
-    }, 220);
+        });
+    }, CONFIG.TIMING.FULLSCREEN_TRANSITION_DELAY);
 
     log(`Focused: Slot ${slot}`, 'success');
 }
@@ -116,7 +130,7 @@ function exitFullscreen() {
                 window.abos.setBounds(agentId, newBounds);
             }
         });
-    }, 220);
+    }, CONFIG.TIMING.FULLSCREEN_TRANSITION_DELAY);
 
     log(`Exited focus mode`);
 }
@@ -126,7 +140,7 @@ function toggleFullscreen(slot) {
         exitFullscreen();
     } else {
         if (fullscreenSlot !== null) exitFullscreen();
-        setTimeout(() => enterFullscreen(slot), 50);
+        setTimeout(() => enterFullscreen(slot), CONFIG.TIMING.FULLSCREEN_ENTER_DELAY);
     }
 }
 
@@ -144,6 +158,7 @@ document.addEventListener('keydown', (e) => {
 async function createAgent(slot) {
     const agentId = `agent-${Date.now()}`;
 
+    // Wait for DOM to be ready
     await new Promise(r => requestAnimationFrame(r));
 
     const bounds = getSlotBounds(slot);
@@ -155,6 +170,7 @@ async function createAgent(slot) {
     log(`Creating agent in slot ${slot}...`);
 
     try {
+        // Create the agent in main process
         await window.abos.createAgent(agentId, bounds);
 
         const slotEl = workspaceGrid.querySelector(`[data-slot="${slot}"]`);
@@ -169,9 +185,14 @@ async function createAgent(slot) {
         log(`Agent created in slot ${slot}`, 'success');
 
         activeAgentId = agentId;
+
+        // Wait a bit to ensure BrowserView is fully attached
+        await new Promise(r => setTimeout(r, CONFIG.TIMING.AGENT_INIT_DELAY));
+
         return agentId;
     } catch (error) {
         log(`Failed: ${error.message}`, 'error');
+        console.error('[Renderer] Agent creation failed:', error);
         return null;
     }
 }
@@ -195,7 +216,10 @@ async function navigateAgent(agentId, url) {
                 try {
                     const domain = new URL(url).hostname;
                     slotEl.querySelector('.slot-title').textContent = domain;
-                } catch (e) { }
+                } catch (e) {
+                    console.error('[Renderer] Failed to parse URL for display:', e.message);
+                    slotEl.querySelector('.slot-title').textContent = 'Loading...';
+                }
             }
         }
         updateAgentList();
@@ -206,7 +230,7 @@ async function navigateAgent(agentId, url) {
 
 // Round-robin navigation - each URL goes to the next available slot
 async function navigateToNextSlot(url) {
-    const MAX_SLOTS = 4;
+    const MAX_SLOTS = CONFIG.AGENT.MAX_AGENTS;
 
     // Find or create agent in the next slot
     let targetAgentId = null;
@@ -225,7 +249,7 @@ async function navigateToNextSlot(url) {
             log(`Failed to create agent in slot ${slotIndex}`, 'error');
             return;
         }
-        await new Promise(r => setTimeout(r, 100)); // Wait for agent to initialize
+        await new Promise(r => setTimeout(r, CONFIG.TIMING.AGENT_INIT_DELAY)); // Wait for agent to initialize
     }
 
     // Navigate the agent
@@ -284,8 +308,7 @@ async function destroyAgent(slotIndex) {
 }
 
 function updateAgentList() {
-    agentCount.textContent = agents.size;
-
+    // Note: agentCount element was removed from UI
     if (agents.size === 0) {
         agentList.innerHTML = '<div class="empty-state">No agents</div>';
         return;
@@ -301,6 +324,7 @@ function updateAgentList() {
             try {
                 displayUrl = new URL(data.url).hostname;
             } catch (e) {
+                console.error('[Renderer] Failed to parse agent URL:', e.message);
                 displayUrl = data.url.slice(0, 20);
             }
         }
@@ -323,38 +347,169 @@ function updateAgentList() {
 // Double-Click Handler for Workspace Slots
 // =============================================================================
 
-workspaceGrid.querySelectorAll('.workspace-slot').forEach(slot => {
-    const slotIndex = parseInt(slot.dataset.slot);
+// =============================================================================
+// Tab Navigation Handling
+// =============================================================================
 
-    // Double-click anywhere on slot to fullscreen (including header)
-    slot.addEventListener('dblclick', (e) => {
-        // Don't trigger on close button clicks
-        if (e.target.closest('.slot-close-btn')) return;
-        toggleFullscreen(slotIndex);
-    });
+function setupTabNavigation() {
+    const tabsContainer = document.getElementById('tabsContainer');
+    const addTabBtn = document.getElementById('addTabBtn');
 
-    // Single click to select
-    slot.addEventListener('click', (e) => {
-        if (e.target.closest('.slot-close-btn') || e.target.closest('.exit-fullscreen-btn')) return;
+    // Tab switching logic
+    tabsContainer.addEventListener('click', (e) => {
+        const tab = e.target.closest('.tab');
+        if (!tab) return;
 
-        const agentId = Array.from(agents.entries()).find(([id, data]) => data.slot === slotIndex)?.[0];
+        // Close button logic
+        if (e.target.closest('.tab-close')) {
+            const slot = parseInt(tab.dataset.slot);
+            destroyAgent(slot);
+            tab.remove();
+            return;
+        }
+
+        // Switch agents
+        const slot = parseInt(tab.dataset.slot);
+        const agentId = Array.from(agents.entries()).find(([id, data]) => data.slot === slot)?.[0];
         if (agentId) {
-            activeAgentId = agentId;
-            document.querySelectorAll('.workspace-slot').forEach(s => s.classList.remove('active'));
-            slot.classList.add('active');
-            updateAgentList();
+            setActiveAgent(agentId, slot);
         }
     });
 
-    // Close button handler
-    const closeBtn = slot.querySelector('.slot-close-btn');
-    if (closeBtn) {
-        closeBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            destroyAgent(slotIndex);
+    addTabBtn.addEventListener('click', async () => {
+        for (let i = 0; i < CONFIG.AGENT.MAX_AGENTS; i++) {
+            const slotUsed = Array.from(agents.values()).some(a => a.slot === i);
+            if (!slotUsed) {
+                await createAgent(i);
+                createTab(i, 'New Tab', 'https://www.google.com/favicon.ico');
+                return;
+            }
+        }
+        log('All slots full', 'error');
+    });
+}
+
+function createTab(slot, title, favicon) {
+    const tabsContainer = document.getElementById('tabsContainer');
+    const colors = ['#4285f4', '#0077b5', '#ea4335', '#f4b400', '#0f9d58', '#ab47bc'];
+    const color = colors[slot % colors.length];
+
+    const tab = document.createElement('div');
+    tab.className = 'tab';
+    tab.dataset.slot = slot;
+    tab.style.setProperty('--tab-color', color);
+    tab.innerHTML = `
+        <img src="${favicon || 'logo.svg'}" class="tab-favicon" onerror="this.src='logo.svg'">
+        <span class="tab-title">${title}</span>
+        <button class="tab-close">×</button>
+    `;
+
+    tabsContainer.appendChild(tab);
+    return tab;
+}
+
+function setActiveAgent(agentId, slot) {
+    activeAgentId = agentId;
+
+    // Update Tabs UI
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    const tabEl = document.querySelector(`.tab[data-slot="${slot}"]`);
+    if (tabEl) tabEl.classList.add('active');
+
+    // Update Workspace UI
+    document.querySelectorAll('.workspace-slot').forEach(s => s.classList.remove('active'));
+    const slotEl = workspaceGrid.querySelector(`[data-slot="${slot}"]`);
+    if (slotEl) {
+        slotEl.classList.add('active');
+        // If in fullscreen mode, switch to this slot
+        if (mainLayout.classList.contains('fullscreen-mode')) {
+            enterFullscreen(slot);
+        }
+    }
+
+    updateAgentList();
+}
+
+function updateTabInfo(slot, title, url) {
+    const tabEl = document.querySelector(`.tab[data-slot="${slot}"]`);
+    if (tabEl) {
+        try {
+            const urlObj = new URL(url);
+            const domain = urlObj.hostname;
+
+            if (title) tabEl.querySelector('.tab-title').textContent = title;
+            else if (domain) tabEl.querySelector('.tab-title').textContent = domain;
+            else if (url === 'about:blank') tabEl.querySelector('.tab-title').textContent = 'New Tab';
+
+            const faviconImg = tabEl.querySelector('.tab-favicon');
+            if (domain) {
+                faviconImg.src = `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+            } else {
+                faviconImg.src = 'logo.svg';
+            }
+        } catch (e) {
+            tabEl.querySelector('.tab-title').textContent = title || 'Smart Browser';
+            tabEl.querySelector('.tab-favicon').src = 'logo.svg';
+        }
+    }
+}
+
+// Update the workspace slot double-click handler
+function setupWorkspaceEvents() {
+    workspaceGrid.querySelectorAll('.workspace-slot').forEach(slot => {
+        const slotIndex = parseInt(slot.dataset.slot);
+
+        slot.addEventListener('dblclick', (e) => {
+            if (e.target.closest('.slot-close-btn')) return;
+            toggleFullscreen(slotIndex);
+        });
+
+        slot.addEventListener('click', (e) => {
+            if (e.target.closest('.slot-close-btn') || e.target.closest('.exit-fullscreen-btn')) return;
+
+            const agentId = Array.from(agents.entries()).find(([id, data]) => data.slot === slotIndex)?.[0];
+            if (agentId) {
+                setActiveAgent(agentId, slotIndex);
+            }
+        });
+
+        const closeBtn = slot.querySelector('.slot-close-btn');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                destroyAgent(slotIndex);
+                const tabEl = document.querySelector(`.tab[data-slot="${slotIndex}"]`);
+                if (tabEl) tabEl.remove();
+            });
+        }
+    });
+
+    // Collapsible Log Panel
+    const toggleLogBtn = document.getElementById('toggleLogBtn');
+    const auditPanel = document.getElementById('auditPanel');
+    if (toggleLogBtn && auditPanel) {
+        toggleLogBtn.addEventListener('click', () => {
+            auditPanel.classList.toggle('collapsed');
         });
     }
-});
+
+    // Advanced Mode Toggle
+    const advancedToggle = document.getElementById('advancedModeToggle');
+    if (advancedToggle) {
+        advancedToggle.addEventListener('change', (e) => {
+            const isAdvanced = e.target.checked;
+            document.body.classList.toggle('advanced-mode', isAdvanced);
+            log(`Switched to ${isAdvanced ? 'Advanced' : 'Simple'} mode`, 'info');
+
+            // In simple mode, we might want to hide the agent list or log panel
+            if (!isAdvanced) {
+                auditPanel.classList.add('collapsed');
+            } else {
+                auditPanel.classList.remove('collapsed');
+            }
+        });
+    }
+}
 
 // =============================================================================
 // Command Execution
@@ -462,8 +617,17 @@ newAgentBtn.addEventListener('click', async () => {
 window.abos.onAgentNavigated((data) => {
     log(`Loaded: ${data.url}`, 'navigate');
     if (agents.has(data.agentId)) {
-        agents.get(data.agentId).url = data.url;
+        const agentData = agents.get(data.agentId);
+        agentData.url = data.url;
         updateAgentList();
+        updateTabInfo(agentData.slot, null, data.url);
+
+        // Hide placeholder
+        const slotEl = workspaceGrid.querySelector(`[data-slot="${agentData.slot}"]`);
+        if (slotEl) {
+            const contentEl = slotEl.querySelector('.slot-content');
+            if (contentEl) contentEl.classList.remove('empty');
+        }
     }
 });
 
@@ -504,13 +668,205 @@ window.addEventListener('resize', () => {
                 window.abos.setBounds(agentId, newBounds);
             }
         });
-    }, 100);
+    }, CONFIG.TIMING.RESIZE_DEBOUNCE_DELAY);
 });
+
 
 // =============================================================================
 // Init
 // =============================================================================
 
-log('Smart Browser ready');
-log('Type "go to example.com"');
-log('Double-click slot for fullscreen');
+async function initializeDefaultAgents() {
+    log('Initializing Smart Workspace...', 'info');
+    document.getElementById('tabsContainer').innerHTML = ''; // Clear demo tabs
+
+    // Create 4 initial agents - one for each slot
+    for (let i = 0; i < CONFIG.AGENT.MAX_AGENTS; i++) {
+        const agentId = await createAgent(i);
+        createTab(i, `Agent ${i + 1}`, 'logo.svg'); // Placeholder
+
+        // Small delay to prevent race conditions on startup
+        await new Promise(r => setTimeout(r, 50));
+    }
+
+    // Set first one active
+    const firstAgentId = Array.from(agents.entries()).find(([id, data]) => data.slot === 0)?.[0];
+    if (firstAgentId) setActiveAgent(firstAgentId, 0);
+
+    updateAgentList();
+}
+
+// Global UI Handlers
+function setupSecureUI() {
+    const walletBtn = document.getElementById('walletBtn');
+    const profileBtn = document.getElementById('profileBtn');
+    const profileDropdown = document.getElementById('profileDropdown');
+    const appLauncherBtn = document.getElementById('appLauncherBtn');
+    const launcher = document.getElementById('secureLauncher');
+
+    const micBtn = document.getElementById('micBtn');
+
+    setupTabNavigation(); // Initialize Tab System
+
+    // Mic Button (Voice Commands)
+    if (micBtn) {
+        micBtn.addEventListener('click', () => {
+            log('Listening for voice commands...', 'info');
+        });
+    }
+
+    // App Launcher (9-dot grid)
+    if (appLauncherBtn) {
+        appLauncherBtn.addEventListener('click', () => {
+            log('Opening Secure App Suite...', 'info');
+            if (launcher) launcher.open();
+        });
+    }
+
+    // Wallet Panel Toggle
+    const walletPanel = document.getElementById('walletPanel');
+    if (walletBtn && walletPanel) {
+        walletBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isOpen = walletPanel.classList.toggle('open');
+            log(isOpen ? 'Opening Secure Wallet...' : 'Closing Wallet', 'info');
+
+            // Close profile if open
+            if (isOpen && profileDropdown) profileDropdown.classList.remove('open');
+
+            // Hide/Show BrowserViews
+            if (window.electronAPI && window.electronAPI.toggleViews) {
+                window.electronAPI.toggleViews(!isOpen);
+            }
+        });
+
+        // Close when clicking outside
+        document.addEventListener('click', (e) => {
+            if (walletPanel.classList.contains('open') && !walletPanel.contains(e.target)) {
+                walletPanel.classList.remove('open');
+                if (window.electronAPI && window.electronAPI.toggleViews) {
+                    window.electronAPI.toggleViews(true);
+                }
+            }
+        });
+    }
+
+    // Profile Dropdown Toggle
+    if (profileBtn && profileDropdown) {
+        profileBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isOpen = profileDropdown.classList.toggle('open');
+            log(isOpen ? 'Accessing Identity Vault...' : 'Closing Profile', 'info');
+
+            // Close wallet if open
+            if (isOpen && walletPanel) walletPanel.classList.remove('open');
+
+            // Hide/Show BrowserViews to prevent overlapping
+            if (window.electronAPI && window.electronAPI.toggleViews) {
+                window.electronAPI.toggleViews(!isOpen);
+            }
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (profileDropdown.classList.contains('open') && !profileDropdown.contains(e.target)) {
+                profileDropdown.classList.remove('open');
+                if (window.electronAPI && window.electronAPI.toggleViews) {
+                    window.electronAPI.toggleViews(true);
+                }
+            }
+        });
+    }
+
+    // Folder Sidebar Toggle
+    const foldersSidebar = document.getElementById('foldersSidebar');
+
+    if (folderBtn && foldersSidebar) {
+        folderBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isOpen = foldersSidebar.classList.toggle('open');
+            log(isOpen ? 'Opening Secure Storage...' : 'Closing Storage', 'info');
+
+            // Close others if opening
+            if (isOpen) {
+                if (walletPanel) walletPanel.classList.remove('open');
+                if (profileDropdown) profileDropdown.classList.remove('open');
+            }
+
+            // Hide/Show BrowserViews
+            if (window.electronAPI && window.electronAPI.toggleViews) {
+                window.electronAPI.toggleViews(!isOpen);
+            }
+        });
+
+        // Close when clicking outside
+        document.addEventListener('click', (e) => {
+            if (foldersSidebar.classList.contains('open') && !foldersSidebar.contains(e.target)) {
+                foldersSidebar.classList.remove('open');
+                if (window.electronAPI && window.electronAPI.toggleViews) {
+                    window.electronAPI.toggleViews(true);
+                }
+            }
+        });
+    }
+
+    // Keyboard shortcut: Ctrl/Cmd + K
+    document.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            log('Hotkey: Opening Launcher', 'info');
+            if (launcher) launcher.open();
+        }
+    });
+}
+
+// Start everything
+document.addEventListener('DOMContentLoaded', () => {
+    // Initial Lucide icons
+    if (window.lucide) {
+        lucide.createIcons();
+    }
+
+    setupSecureUI();
+    setupWorkspaceEvents();
+
+    initializeDefaultAgents()
+        .then(() => {
+            log('Smart Browser ready', 'success');
+            // Focus command bar on launch
+            if (commandInput) commandInput.focus();
+        })
+        .catch(err => log(`Startup error: ${err.message}`, 'error'));
+
+    // Secure Launcher Event Listeners
+    const launcher = document.getElementById('secureLauncher');
+    if (launcher) {
+        launcher.addEventListener('launcher-open', () => {
+            log('Secure Layer Active', 'info');
+            if (window.electronAPI && window.electronAPI.toggleViews) {
+                window.electronAPI.toggleViews(false);
+            }
+        });
+
+        launcher.addEventListener('launcher-close', () => {
+            log('Secure Layer Closed', 'info');
+            if (window.electronAPI && window.electronAPI.toggleViews) {
+                window.electronAPI.toggleViews(true);
+            }
+        });
+
+        launcher.addEventListener('app-launch', async (e) => {
+            const { appId, riskLevel } = e.detail;
+            log(`Secure Launch: ${appId} (Risk: ${riskLevel})`, 'info');
+
+            if (window.abos && window.abos.launchSecureApp) {
+                await window.abos.launchSecureApp(appId, riskLevel);
+            }
+        });
+    }
+
+    // Periodically refresh icons for dynamically added content
+    setInterval(() => {
+        if (window.lucide) lucide.createIcons();
+    }, 1000);
+});

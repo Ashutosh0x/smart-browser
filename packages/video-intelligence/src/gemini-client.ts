@@ -74,6 +74,9 @@ export class GeminiClient {
     private genAI: GoogleGenerativeAI | null = null;
     private model: GenerativeModel | null = null;
     private chatSessions: Map<string, ChatSession> = new Map();
+    private sessionTimestamps: Map<string, number> = new Map();
+    private readonly MAX_SESSIONS = 10;
+    private readonly SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
 
     /**
      * Initialize with API key (call from main process only)
@@ -97,6 +100,41 @@ export class GeminiClient {
      */
     isReady(): boolean {
         return this.model !== null;
+    }
+
+    /**
+     * Remove expired sessions based on timeout
+     */
+    private pruneExpiredSessions(): void {
+        const now = Date.now();
+        for (const [videoId, timestamp] of this.sessionTimestamps.entries()) {
+            if (now - timestamp > this.SESSION_TIMEOUT_MS) {
+                this.chatSessions.delete(videoId);
+                this.sessionTimestamps.delete(videoId);
+                console.log(`[GeminiClient] Pruned expired session: ${videoId}`);
+            }
+        }
+    }
+
+    /**
+     * Remove oldest session if max limit reached
+     */
+    private pruneOldestSession(): void {
+        let oldestVideoId: string | null = null;
+        let oldestTimestamp = Infinity;
+
+        for (const [videoId, timestamp] of this.sessionTimestamps.entries()) {
+            if (timestamp < oldestTimestamp) {
+                oldestTimestamp = timestamp;
+                oldestVideoId = videoId;
+            }
+        }
+
+        if (oldestVideoId) {
+            this.chatSessions.delete(oldestVideoId);
+            this.sessionTimestamps.delete(oldestVideoId);
+            console.log(`[GeminiClient] Pruned oldest session: ${oldestVideoId}`);
+        }
     }
 
     /**
@@ -149,10 +187,18 @@ Now provide your ${request.mode === 'summary' ? 'bullet-point summary' : 'explan
             throw new Error('GeminiClient not initialized');
         }
 
+        // Clean up expired sessions first
+        this.pruneExpiredSessions();
+
         // Get or create chat session
         let session = this.chatSessions.get(videoId);
 
         if (!session) {
+            // Check if we need to prune oldest session
+            if (this.chatSessions.size >= this.MAX_SESSIONS) {
+                this.pruneOldestSession();
+            }
+
             // Create new session with context
             session = this.model.startChat({
                 history: [
@@ -177,6 +223,9 @@ I'll now ask questions about this video.` }],
             this.chatSessions.set(videoId, session);
         }
 
+        // Update timestamp for this session
+        this.sessionTimestamps.set(videoId, Date.now());
+
         // Send question
         const result = await session.sendMessage(question);
         return result.response.text();
@@ -187,6 +236,8 @@ I'll now ask questions about this video.` }],
      */
     clearSession(videoId: string): void {
         this.chatSessions.delete(videoId);
+        this.sessionTimestamps.delete(videoId);
+        console.log(`[GeminiClient] Cleared session: ${videoId}`);
     }
 
     /**
@@ -194,6 +245,8 @@ I'll now ask questions about this video.` }],
      */
     clearAllSessions(): void {
         this.chatSessions.clear();
+        this.sessionTimestamps.clear();
+        console.log('[GeminiClient] Cleared all sessions');
     }
 }
 

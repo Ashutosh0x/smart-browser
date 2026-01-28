@@ -53,6 +53,9 @@ contextBridge.exposeInMainWorld('abos', {
 contextBridge.exposeInMainWorld('electronAPI', {
     toggleViews: (visible) => ipcRenderer.invoke('views:toggle', { visible }),
 
+    // Theme Control
+    setTheme: (theme) => ipcRenderer.invoke('theme:set', { theme }),
+
     // Video Intelligence (Production - session-scoped)
     explainVideo: (params) => ipcRenderer.invoke('intel:explain', params),
     askVideoQuestion: (params) => ipcRenderer.invoke('intel:ask', params),

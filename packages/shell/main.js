@@ -29,7 +29,18 @@ try {
         sessionManager = new SessionManager(geminiClient);
         console.log('[VideoIntel] Production pipeline initialized');
     } else {
-        console.warn('[VideoIntel] GEMINI_API_KEY not set');
+        console.warn('[VideoIntel] GEMINI_API_KEY not set - Video Intelligence features will be disabled');
+        // Show warning to user on startup
+        setTimeout(() => {
+            const { dialog } = require('electron');
+            dialog.showMessageBox({
+                type: 'warning',
+                title: 'Configuration Warning',
+                message: 'GEMINI_API_KEY not configured',
+                detail: 'Video Intelligence features require a Gemini API key. Please add GEMINI_API_KEY to your .env file to enable video explanations and Q&A.\n\nThe browser will work normally, but video features will be unavailable.',
+                buttons: ['OK']
+            });
+        }, 1000); // Delay to ensure window is ready
     }
 } catch (err) {
     console.error('[VideoIntel] Failed to load:', err.message);
@@ -52,10 +63,20 @@ class AgentManager {
     constructor() {
         this.agents = new Map(); // agentId -> { view, bounds }
         this.mainWindow = null;
+        this.currentTheme = 'dark-neon';
     }
 
     setMainWindow(win) {
         this.mainWindow = win;
+    }
+
+    setTheme(theme) {
+        this.currentTheme = theme;
+        // Update existing agents
+        const bgColor = theme === 'light-glass' ? '#f8fafc' : '#131924';
+        for (const [agentId, agent] of this.agents) {
+            agent.view.setBackgroundColor(bgColor);
+        }
     }
 
     // Create a real browser view for an agent
@@ -95,8 +116,9 @@ class AgentManager {
             vertical: false,
         });
 
-        // Make sure it's visible
-        view.setBackgroundColor('#ffffff');
+        // Make sure it's visible and matches the theme to prevent white flashes
+        const bgColor = this.currentTheme === 'light-glass' ? '#f8fafc' : '#131924';
+        view.setBackgroundColor(bgColor);
 
         this.agents.set(agentId, { view, bounds: adjustedBounds });
 
@@ -233,6 +255,17 @@ class AgentManager {
 
         const wc = agent.view.webContents;
 
+        // Whitelist of allowed selector patterns to prevent code injection
+        const SAFE_SELECTOR_PATTERN = /^[a-zA-Z0-9\s\.\#\[\]\=\-\_\>\+\~\*\:\(\)\"\']+$/;
+
+        // Validate selector for actions that use it
+        if (['click', 'type', 'extract'].includes(action) && target) {
+            if (!SAFE_SELECTOR_PATTERN.test(target)) {
+                console.error('[Security] Invalid selector pattern:', target);
+                return { success: false, error: 'Invalid selector pattern - potential security risk' };
+            }
+        }
+
         try {
             switch (action) {
                 case 'click':
@@ -249,25 +282,34 @@ class AgentManager {
                     `);
                     break;
                 case 'type':
-                    await wc.executeJavaScript(`
-                        (function() {
-                            const el = document.querySelector(${JSON.stringify(target)});
-                            if (el) {
-                                el.focus();
-                                el.value = ${JSON.stringify(params.text)};
-                                el.dispatchEvent(new Event('input', { bubbles: true }));
-                                el.dispatchEvent(new Event('change', { bubbles: true }));
-                                // Also dispatch keyboard events for React/Vue sensitivity
-                                el.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true }));
-                                el.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
-                                return true;
-                            }
-                            return false;
-                        })()
-                    `);
+                    // Also validate text content to prevent script injection
+                    if (params && params.text) {
+                        const safeText = String(params.text).replace(/[<>]/g, '');
+                        await wc.executeJavaScript(`
+                            (function() {
+                                const el = document.querySelector(${JSON.stringify(target)});
+                                if (el) {
+                                    el.focus();
+                                    el.value = ${JSON.stringify(safeText)};
+                                    el.dispatchEvent(new Event('input', { bubbles: true }));
+                                    el.dispatchEvent(new Event('change', { bubbles: true }));
+                                    // Also dispatch keyboard events for React/Vue sensitivity
+                                    el.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true }));
+                                    el.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
+                                    return true;
+                                }
+                                return false;
+                            })()
+                        `);
+                    }
                     break;
                 case 'scroll':
-                    await wc.executeJavaScript(`window.scrollBy({ top: ${params.y || 400}, behavior: 'smooth' })`);
+                    // Validate scroll parameters
+                    const scrollY = parseInt(params?.y || 400);
+                    if (isNaN(scrollY) || scrollY < -10000 || scrollY > 10000) {
+                        return { success: false, error: 'Invalid scroll amount' };
+                    }
+                    await wc.executeJavaScript(`window.scrollBy({ top: ${scrollY}, behavior: 'smooth' })`);
                     break;
                 case 'screenshot':
                     const image = await wc.capturePage();
@@ -284,6 +326,7 @@ class AgentManager {
             }
             return { success: true };
         } catch (error) {
+            console.error(`[AgentManager] executeAction error:`, error.message);
             return { success: false, error: error.message };
         }
     }
@@ -493,6 +536,13 @@ ipcMain.handle('views:toggle', async (event, { visible }) => {
     return { success: true };
 });
 
+// Update agent backgrounds when theme changes
+ipcMain.handle('theme:set', async (event, { theme }) => {
+    console.log('[IPC] theme:set', theme);
+    agentManager.setTheme(theme);
+    return { success: true };
+});
+
 
 // =============================================================================
 // Video Intelligence IPC (Production - Session-Based)
@@ -522,7 +572,9 @@ ipcMain.handle('intel:explain', async (event, { videoId, mode, agentId }) => {
                                 const pr = ytPlayer.getPlayerResponse();
                                 return pr?.captions?.playerCaptionsTracklistRenderer?.captionTracks || [];
                             }
-                        } catch (e) {}
+                        } catch (e) {
+                            console.error('[VideoIntel] Failed to extract caption tracks from page:', e.message);
+                        }
                         return [];
                     })()
                 `);
