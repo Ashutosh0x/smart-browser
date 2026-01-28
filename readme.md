@@ -11,6 +11,8 @@
 
 **An AI-native browser operating system with multi-agent browsing and Gemini-powered video intelligence.**
 <img width="2816" height="1536" alt="Gemini_Generated_Image_gsixjygsixjygsix" src="https://github.com/user-attachments/assets/ce1592ce-28d6-48d8-b9d8-bd7d00dd6e3b" />
+<img width="1734" height="1072" alt="image" src="https://github.com/user-attachments/assets/9e74fb46-c446-42d0-8aed-df4d1e50d3f5" />
+
 
 </div>
 
@@ -231,4 +233,5 @@ MIT License
 
 Ashutosh Kumar Singh  
 ashutoshkumarsingh0x@gmail.com
+
 
